@@ -49,6 +49,12 @@
             android:enabled="false"
             android:text="Stop Client" />
 
+        <Button
+            android:id="@+id/start_vpn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start VPN" />
+
     </LinearLayout>
 
     <TextView

@@ -1,9 +1,11 @@
 package amiin.bazouk.application.com.p2pproject;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.VpnService;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
@@ -38,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private IntentFilter mIntentFilter;
 
     private boolean serviceAlreadyCreated;
+    private boolean groupFromTheApp;
     private String ssid;
     private String password;
 
@@ -45,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
             if(wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner){
+                System.out.println("IP ADDRESS: "+wifiP2pInfo.groupOwnerAddress.getHostAddress());
                 connectionStatus.setText("Host");
                 mManager.requestGroupInfo(mChannel, new WifiP2pManager.GroupInfoListener() {
                             @Override
@@ -114,15 +118,15 @@ public class MainActivity extends AppCompatActivity {
                                     WifiP2pDevice device) {
                                 ssid = record.get("ssid");
                                 password = record.get("password");
-                                mManager.removeServiceRequest(mChannel, serviceRequest, new WifiP2pManager.ActionListener() {
+                                mManager.clearServiceRequests(mChannel, new WifiP2pManager.ActionListener() {
                                     @Override
                                     public void onSuccess() {
-
+                                        int a = 0;
                                     }
 
                                     @Override
                                     public void onFailure(int i) {
-
+                                        int a = 0;
                                     }
                                 });
                             }
@@ -182,6 +186,7 @@ public class MainActivity extends AppCompatActivity {
                 mManager.createGroup(mChannel, new WifiP2pManager.ActionListener() {
                     @Override
                     public void onSuccess() {
+                        groupFromTheApp = true;
                         Toast.makeText(getApplicationContext(),"Group created",Toast.LENGTH_LONG).show();
                     }
                     @Override
@@ -189,6 +194,18 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(getApplicationContext(),"Group not created",Toast.LENGTH_LONG).show();
                     }
                 });
+            }
+        });
+
+        findViewById(R.id.start_vpn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = VpnService.prepare(MainActivity.this);
+                if (intent != null) {
+                    startActivityForResult(intent, 0);
+                } else {
+                    onActivityResult(0, RESULT_OK, null);
+                }
             }
         });
     }
@@ -317,11 +334,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void deletePersistentGroups() {
+        //startService(getServiceIntent().setAction(ToyVpnService.ACTION_DISCONNECT));
         mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
                 Toast.makeText(getApplicationContext(),"Group Disconnected",Toast.LENGTH_LONG).show();
                 serviceAlreadyCreated = false;
+                groupFromTheApp = false;
                 btnServerStart.setEnabled(true);
                 btnRmvGroup.setEnabled(false);
                 connectionStatus.setText("");
@@ -332,6 +351,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(),"Group Not Disconnected",Toast.LENGTH_LONG).show();
                 Toast.makeText(getApplicationContext(),"Group Disconnected",Toast.LENGTH_LONG).show();
                 serviceAlreadyCreated = false;
+                groupFromTheApp = false;
                 btnServerStart.setEnabled(true);
                 btnRmvGroup.setEnabled(false);
                 connectionStatus.setText("");
@@ -357,7 +377,18 @@ public class MainActivity extends AppCompatActivity {
         return serviceAlreadyCreated;
     }
 
-    public void setServiceAlreadyCreated(boolean serviceAlreadyCreated) {
-        this.serviceAlreadyCreated = serviceAlreadyCreated;
+    public boolean getGroupFromTheApp(){
+        return groupFromTheApp;
+    }
+
+    private Intent getServiceIntent() {
+        return new Intent(this, ToyVpnService.class);
+    }
+
+    @Override
+    protected void onActivityResult(int request, int result, Intent data) {
+        if (result == RESULT_OK) {
+            startService(getServiceIntent().setAction(ToyVpnService.ACTION_CONNECT));
+        }
     }
 }
