@@ -89,8 +89,7 @@ public class ToyVpnService extends VpnService implements Handler.Callback {
 
         // Extract information from the shared preferences.
         final String server = "192.168.49.1";
-        final int port;
-        port = 8282;
+        final int port = 8282;
 
         // Kick off a connection.
         startConnection(new ToyVpnConnection(

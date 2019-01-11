@@ -314,6 +314,7 @@ public class MainActivity extends AppCompatActivity {
                 netId = getExistingNetworkId(conf.SSID, mWifiManager);
             }
 
+
             mWifiManager.disconnect();
             mWifiManager.enableNetwork(netId, true);
             mWifiManager.reconnect();
