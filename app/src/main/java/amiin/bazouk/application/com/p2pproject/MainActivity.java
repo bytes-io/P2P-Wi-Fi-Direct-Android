@@ -22,6 +22,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -186,6 +188,20 @@ public class MainActivity extends AppCompatActivity {
                 mManager.createGroup(mChannel, new WifiP2pManager.ActionListener() {
                     @Override
                     public void onSuccess() {
+                        Thread t = new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                new ProxyServer(8282);
+                            }
+                        });
+                        t.start();
+                        /*Thread t = new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                startProxyServer(8282);
+                            }
+                        });
+                        t.start();*/
                         groupFromTheApp = true;
                         Toast.makeText(getApplicationContext(),"Group created",Toast.LENGTH_LONG).show();
                     }
@@ -391,5 +407,27 @@ public class MainActivity extends AppCompatActivity {
         if (result == RESULT_OK) {
             startService(getServiceIntent().setAction(ToyVpnService.ACTION_CONNECT));
         }
+    }
+    private void startProxyServer(int port) {
+        ServerSocket serverSocket = null;
+
+        try {
+            serverSocket = new ServerSocket(port);
+            System.out.println("Started on: " + port);
+        } catch (IOException e) {
+            System.err.println("Could not listen on port: " + port);
+            System.exit(-1);
+        }
+
+        boolean listening = true;
+       while (listening) {
+            try {
+                new ProxyThread(serverSocket.accept()).start();
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.err.println("Could not start proxy thread");
+            }
+        }
+       //serverSocket.close();
     }
 }
